@@ -9,7 +9,7 @@ use winit::{
     window::Window,
 };
 
-pub trait Example: 'static + Sized {
+pub trait Canvas: 'static + Sized {
     const SRGB: bool = true;
 
     fn optional_features() -> wgpu::Features {
@@ -109,8 +109,14 @@ impl EventLoopWrapper {
                 .unwrap()
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .unwrap();
+
+            builder = builder.with_inner_size(winit::dpi::LogicalSize::new(
+                canvas.width() as f64,
+                canvas.height() as f64,
+            ));
             builder = builder.with_canvas(Some(canvas));
         }
+
         builder = builder.with_title(title);
         let window = Arc::new(builder.build(&event_loop).unwrap());
 
@@ -164,13 +170,11 @@ impl SurfaceWrapper {
     /// On all native platforms, this is where we create the surface.
     ///
     /// Additionally, we configure the surface based on the (now valid) window size.
-    fn resume(&mut self, context: &ExampleContext, window: Arc<Window>, srgb: bool) {
+    fn resume(&mut self, context: &Context, window: Arc<Window>, srgb: bool) {
         // Window size is only actually valid after we enter the event loop.
         let window_size = window.inner_size();
-        // let width = window_size.width.max(1);
-        // let height = window_size.height.max(1);
-        let width = 800;
-        let height = 600;
+        let width = window_size.width.max(1);
+        let height = window_size.height.max(1);
 
         log::info!("Surface resume {window_size:?}");
 
@@ -203,18 +207,18 @@ impl SurfaceWrapper {
     }
 
     /// Resize the surface, making sure to not resize to zero.
-    fn resize(&mut self, context: &ExampleContext, size: PhysicalSize<u32>) {
+    fn resize(&mut self, context: &Context, size: PhysicalSize<u32>) {
         log::info!("Surface resize {size:?}");
 
         let config = self.config.as_mut().unwrap();
-        // config.width = size.width.max(1);
-        // config.height = size.height.max(1);
+        config.width = size.width.max(1);
+        config.height = size.height.max(1);
         let surface = self.surface.as_ref().unwrap();
         surface.configure(&context.device, config);
     }
 
     /// Acquire the next surface texture.
-    fn acquire(&mut self, context: &ExampleContext) -> wgpu::SurfaceTexture {
+    fn acquire(&mut self, context: &Context) -> wgpu::SurfaceTexture {
         let surface = self.surface.as_ref().unwrap();
 
         match surface.get_current_texture() {
@@ -257,15 +261,15 @@ impl SurfaceWrapper {
 }
 
 /// Context containing global wgpu resources.
-struct ExampleContext {
+struct Context {
     instance: wgpu::Instance,
     adapter: wgpu::Adapter,
     device: wgpu::Device,
     queue: wgpu::Queue,
 }
-impl ExampleContext {
+impl Context {
     /// Initializes the example context.
-    async fn init_async<E: Example>(surface: &mut SurfaceWrapper, window: Arc<Window>) -> Self {
+    async fn init_async<E: Canvas>(surface: &mut SurfaceWrapper, window: Arc<Window>) -> Self {
         log::info!("Initializing wgpu...");
 
         let backends = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::all());
@@ -366,11 +370,11 @@ impl FrameCounter {
     }
 }
 
-async fn start<E: Example>(title: &str) {
+async fn start<E: Canvas>(title: &str) {
     init_logger();
     let window_loop = EventLoopWrapper::new(title);
     let mut surface = SurfaceWrapper::new();
-    let context = ExampleContext::init_async::<E>(&mut surface, window_loop.window.clone()).await;
+    let context = Context::init_async::<E>(&mut surface, window_loop.window.clone()).await;
     let mut frame_counter = FrameCounter::new();
 
     // We wait to create the example until we have a valid surface.
@@ -475,7 +479,7 @@ async fn start<E: Example>(title: &str) {
     );
 }
 
-pub fn run<E: Example>(title: &'static str) {
+pub fn run<E: Canvas>(title: &'static str) {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             wasm_bindgen_futures::spawn_local(async move { start::<E>(title).await })

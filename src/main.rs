@@ -1,6 +1,8 @@
 use nanorand::{Rng, WyRand};
 use std::{borrow::Cow, mem};
 use wgpu::util::DeviceExt;
+use lazy_static::lazy_static;
+use wasm_bindgen::prelude::*;
 
 mod framework;
 
@@ -12,8 +14,8 @@ const NUM_PARTICLES: u32 = 1500;
 
 const PARTICLES_PER_GROUP: u32 = 64;
 
-/// Example struct holds references to wgpu resources and frame persistent data
-struct Example {
+/// Canvas struct holds references to wgpu resources and frame persistent data
+struct Canvas {
     particle_bind_groups: Vec<wgpu::BindGroup>,
     particle_buffers: Vec<wgpu::Buffer>,
     vertices_buffer: wgpu::Buffer,
@@ -23,7 +25,7 @@ struct Example {
     frame_num: usize,
 }
 
-impl crate::framework::Example for Example {
+impl crate::framework::Canvas for Canvas {
     fn required_limits() -> wgpu::Limits {
         wgpu::Limits::downlevel_defaults()
     }
@@ -35,7 +37,7 @@ impl crate::framework::Example for Example {
         }
     }
 
-    /// constructs initial instance of Example struct
+    /// constructs initial instance of Canvas struct
     fn init(
         config: &wgpu::SurfaceConfiguration,
         _adapter: &wgpu::Adapter,
@@ -230,9 +232,9 @@ impl crate::framework::Example for Example {
         let work_group_count =
             ((NUM_PARTICLES as f32) / (PARTICLES_PER_GROUP as f32)).ceil() as u32;
 
-        // returns Example struct and No encoder commands
+        // returns Canvas struct and No encoder commands
 
-        Example {
+        Canvas {
             particle_bind_groups,
             particle_buffers,
             vertices_buffer,
@@ -319,16 +321,26 @@ impl crate::framework::Example for Example {
 }
 
 pub fn run() {
-    framework::run::<Example>("boids");
+    framework::run::<Canvas>("boids");
 }
 
-cfg_if::cfg_if! {
-    if #[cfg(target_arch = "wasm32")] {
-        use wasm_bindgen::prelude::*;
+lazy_static! {
+    static ref COUNT: std::sync::Mutex<u32> = std::sync::Mutex::new(0);
+}
 
-        #[wasm_bindgen(start)]
-        pub fn start() {
-            run();
-        }
-    }
+#[wasm_bindgen]
+pub fn increment() {
+    let mut count = COUNT.lock().unwrap();
+    *count += 1;
+    println!("count: {}", *count);
+}
+
+#[wasm_bindgen]
+pub fn get_count() -> u32 {
+    let count = COUNT.lock().unwrap();
+    *count
+}
+
+fn main() {
+    run();
 }
