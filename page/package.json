@@ -1,10 +1,11 @@
 {
-  "name": "view",
+  "name": "page",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "wasm": "wasm-pack build ./my-crate --target web",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

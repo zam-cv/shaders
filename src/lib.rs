@@ -318,7 +318,17 @@ impl crate::framework::Example for Example {
     }
 }
 
-/// run example
-pub fn main() {
-    crate::framework::run::<Example>("boids");
+pub fn run() {
+    framework::run::<Example>("boids");
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        use wasm_bindgen::prelude::*;
+
+        #[wasm_bindgen(start)]
+        pub fn start() {
+            run();
+        }
+    }
 }

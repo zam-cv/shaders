@@ -65,14 +65,13 @@ fn init_logger() {
             let wgpu_level = query_level.unwrap_or(log::LevelFilter::Error);
 
             // On web, we use fern, as console_log doesn't have filtering on a per-module level.
-            fern::Dispatch::new()
+            let _ = fern::Dispatch::new()
                 .level(base_level)
                 .level_for("wgpu_core", wgpu_level)
                 .level_for("wgpu_hal", wgpu_level)
                 .level_for("naga", wgpu_level)
                 .chain(fern::Output::call(console_log::log))
-                .apply()
-                .unwrap();
+                .apply();
             std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         } else {
             // parse_default_env will read the RUST_LOG environment variable and apply it on top
@@ -145,7 +144,7 @@ impl SurfaceWrapper {
     /// us to wait until we recieve the `Resumed` event to do so.
     fn pre_adapter(&mut self, instance: &Instance, window: Arc<Window>) {
         if cfg!(target_arch = "wasm32") {
-            self.surface = Some(unsafe { instance.create_surface(window.as_ref()).unwrap() });
+            self.surface = Some(unsafe { instance.create_surface(&window).unwrap() });
         }
     }
 
@@ -168,14 +167,16 @@ impl SurfaceWrapper {
     fn resume(&mut self, context: &ExampleContext, window: Arc<Window>, srgb: bool) {
         // Window size is only actually valid after we enter the event loop.
         let window_size = window.inner_size();
-        let width = window_size.width.max(1);
-        let height = window_size.height.max(1);
+        // let width = window_size.width.max(1);
+        // let height = window_size.height.max(1);
+        let width = 800;
+        let height = 600;
 
         log::info!("Surface resume {window_size:?}");
 
         // We didn't create the surface in pre_adapter, so we need to do so now.
         if !cfg!(target_arch = "wasm32") {
-            self.surface = Some(unsafe { context.instance.create_surface(window.as_ref()).unwrap() });
+            self.surface = Some(unsafe { context.instance.create_surface(&window).unwrap() });
         }
 
         // From here on, self.surface should be Some.
@@ -206,8 +207,8 @@ impl SurfaceWrapper {
         log::info!("Surface resize {size:?}");
 
         let config = self.config.as_mut().unwrap();
-        config.width = size.width.max(1);
-        config.height = size.height.max(1);
+        // config.width = size.width.max(1);
+        // config.height = size.height.max(1);
         let surface = self.surface.as_ref().unwrap();
         surface.configure(&context.device, config);
     }
@@ -267,7 +268,7 @@ impl ExampleContext {
     async fn init_async<E: Example>(surface: &mut SurfaceWrapper, window: Arc<Window>) -> Self {
         log::info!("Initializing wgpu...");
 
-        let backends = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::PRIMARY);
+        let backends = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::all());
         let dx12_shader_compiler = wgpu::util::dx12_shader_compiler_from_env().unwrap_or_default();
         let gles_minor_version = wgpu::util::gles_minor_version_from_env().unwrap_or_default();
 
