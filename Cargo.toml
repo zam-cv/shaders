@@ -1,12 +1,16 @@
-[package]
-name = "shaders"
+[workspace]
+resolver = "2"
+members = ["common", "boids"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-anyhow = "1.0.75"
+[workspace.dependencies]
+common = { path = "./common" }
+
 async-executor = "1.8.0"
 bytemuck = { version = "1.14.0", features = ["derive"] }
 cfg-if = "1.0.0"
@@ -165,6 +169,3 @@ web-sys = { version = "0.3.64", features = [
     "WorkerGlobalScope",
     "WorkerNavigator",
 ] }
-
-nanorand = "0.7.0"
-lazy_static = "1.4.0"

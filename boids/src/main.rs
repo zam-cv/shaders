@@ -1,10 +1,9 @@
+use common::framework;
 use nanorand::{Rng, WyRand};
 use std::{borrow::Cow, mem};
 use wgpu::util::DeviceExt;
 use lazy_static::lazy_static;
 use wasm_bindgen::prelude::*;
-
-mod framework;
 
 // number of boid particles to simulate
 

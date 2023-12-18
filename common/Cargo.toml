@@ -1,0 +1,25 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-executor.workspace = true
+cfg-if.workspace = true
+cgmath.workspace = true
+env_logger.workspace = true
+log.workspace = true
+pollster.workspace = true
+wgpu.workspace = true
+winit.workspace = true
+fern.workspace = true
+console_error_panic_hook.workspace = true
+console_log.workspace = true
+js-sys.workspace = true
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+wasm-bindgen-test.workspace = true
+web-time.workspace = true
+web-sys.workspace = true
